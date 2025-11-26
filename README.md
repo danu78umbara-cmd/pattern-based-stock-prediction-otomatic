@@ -15,9 +15,11 @@ Proyek ini berfungsi sebagai layanan prediksi yang dapat digunakan untuk aplikas
 
 # 🚀 Alur Kerja Proyek (End-to-End)
 
+```
 [User Input] → [Fetch Data via yfinance] → [Feature Engineering] → 
 [Deteksi Pola Candlestick] → [Load Model Sesuai Pola] →
 [Prediksi Naik/Turun] → [Tampilkan Hasil di HTML]
+```
 
 ------------------------------------------------------------
 

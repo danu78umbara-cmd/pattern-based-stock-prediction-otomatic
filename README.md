@@ -1,77 +1,116 @@
-# Prediktor Saham Berbasis Pola (Flask API)
+# 📈 Prediksi Harga Emas dengan Flask API & Yahoo Finance
 
-Repositori ini berisi proyek *end-to-end* untuk klasifikasi harga saham. Keunikan proyek ini adalah arsitektur **"satu model per pola"**, di mana model *machine learning* (Random Forest/Logistic Regression) dilatih secara spesifik untuk setiap pola *candlestick* (misal, 'Hammer', 'Doji', 'Marubozu').
+Repositori ini berisi proyek end-to-end untuk prediksi arah harga emas jangka pendek menggunakan kombinasi pola candlestick, indikator teknikal, dan model Machine Learning berbasis ensemble.
 
-Model-model yang sudah terlatih ini kemudian disajikan (di-<em>deploy</em>) sebagai **API** menggunakan **Flask**, sehingga dapat menerima data baru dan memberikan hasil prediksi.
+Keunikan proyek ini adalah integrasi antara:
 
-## 🚀 Alur Kerja Proyek (End-to-End)
+- Web API Flask
+- Pengambilan data real-time dari Yahoo Finance (yfinance)
+- Pemilihan model otomatis berdasarkan pola candlestick terbaru
+- Antarmuka HTML untuk input dan visualisasi hasil
 
-Proses keseluruhan proyek ini dapat dibagi menjadi dua bagian utama: Pelatihan dan Penerapan.
+Proyek ini berfungsi sebagai layanan prediksi yang dapat digunakan untuk aplikasi web, otomasi trading sederhana, maupun pembelajaran market analytics.
 
+------------------------------------------------------------
 
+# 🚀 Alur Kerja Proyek (End-to-End)
 
-[Image of an end-to-end machine learning workflow diagram]
+[User Input] → [Fetch Data via yfinance] → [Feature Engineering] → 
+[Deteksi Pola Candlestick] → [Load Model Sesuai Pola] →
+[Prediksi Naik/Turun] → [Tampilkan Hasil di HTML]
 
+------------------------------------------------------------
 
-1.  **Pelatihan Model (Offline)** - Dilakukan di `main_workflow.ipynb`
-    * Data mentah (CSV) dimuat dan dibersihkan (`data_emas/`).
-    * Data diproses oleh `preprocessor.py` (termasuk *feature engineering* indikator teknikal).
-    * Data yang tidak seimbang (imbalanced) diseimbangkan menggunakan **SMOTENC**.
-    * Model (RF & LR) dilatih, di-<em>tuning</em> (`GridSearchCV`), dan dievaluasi untuk **setiap pola candlestick secara terpisah**.
-    * Model terbaik untuk setiap pola disimpan ke folder `saved_models/` sebagai file `.pkl`.
+1. Pelatihan Model (Offline, Opsional)
 
-2.  **Penerapan API (Online)** - Dilakukan oleh `app.py`
-    * Aplikasi **Flask** (`app.py`) dijalankan.
-    * Aplikasi ini memuat **semua model `.pkl`** dari `saved_models/` saat *startup*.
-    * Pengguna mengirimkan data baru ke API (misalnya melalui *form* di halaman web dari `templates/`).
-    * `app.py` mengidentifikasi pola *candlestick* dari data baru tersebut, memilih model `.pkl` yang sesuai, dan mengembalikan hasil prediksi (harga akan naik/turun).
+- Data historis harga emas diambil dari Yahoo Finance.
+- Data dibersihkan dan diekstraksi indikator teknikal.
+- Pola candlestick diklasifikasikan.
+- Untuk setiap pola, dilatih satu model Machine Learning berbeda.
+- Model terbaik disimpan dalam folder saved_models/ sebagai file .pkl.
+
+Catatan: Training tidak harus diulang jika model sudah tersedia.
+
+------------------------------------------------------------
+
+2. Penerapan API (Online dengan Flask)
+
+Dilakukan oleh file app.py:
+
+- API berjalan menggunakan Flask.
+- Saat startup, Flask memuat semua file model .pkl.
+- User memasukkan ticker emas (misal: XAUUSD).
+- Sistem mengambil harga terkini menggunakan yfinance.
+- Data diproses oleh feature_engineering() dari preprocessor.py.
+- Pola candlestick terakhir dianalisis.
+- Sistem memilih model sesuai pola (misalnya model_Hammer.pkl).
+- Model menghasilkan prediksi:
+    1 = Naik
+    0 = Turun
+- Hasil dikembalikan ke halaman HTML melalui templates/index.html.
+
+------------------------------------------------------------
 
 ## 🗂️ Struktur Repositori
-
 ```
 .
 ├── 📁 data_emas/           # (Tempat data CSV mentah Anda)
 ├── 📁 saved_models/        # (Tempat model .pkl disimpan)
 ├── 📁 templates/           # (Berisi file HTML untuk antarmuka Flask)
-├── 📁 __pycache__/         # (Harusnya ada di .gitignore!)
 │
 ├── 📜 app.py               # (Aplikasi FASK utama untuk API/Web)
 ├── 📜 main_workflow        # (Notebook untuk analisis, preprocessing & training)
 ├── 📜 preprocessor.py      # (Modul .py untuk fungsi preprocessing)
 ├── 📜 README.md            # (Dokumentasi ini)
-└── 📜 requirements.txt     # (Daftar library yang dibutuhkan)
 ```
 
-## 🛠️ Cara Penggunaan
+# 🛠️ Cara Menjalankan Sistem
 
-Ada dua skenario penggunaan untuk repositori ini:
+1. Jalankan Flask API
+```bash
+python app.py
+```
+Akses melalui browser:
+`http://127.0.0.1:5000`
 
-### 1. Menjalankan Aplikasi Web (Flask) dengan Model yang Ada
+2. Proses Prediksi di Frontend
 
-Ini adalah cara untuk langsung menggunakan aplikasi web dengan model yang sudah Anda latih.
+Pada halaman HTML:
 
-1.  Pastikan folder `saved_models/` Anda sudah berisi file `.pkl` hasil dari pelatihan.
-2.  Install semua *library* yang dibutuhkan:
-    ```bash
-    pip install -r requirements.txt
-    ```
-3.  Jalankan aplikasi Flask dari terminal:
-    ```bash
-    python app.py
-    ```
-4.  Buka browser Anda dan navigasikan ke `http://127.0.0.1:5000` (atau alamat yang muncul di terminal).
+- Masukkan ticker (misal XAUUSD)
+- Klik Submit
 
-### 2. Melatih Ulang Model dari Awal (Opsional)
+Backend otomatis:
 
-Jika Anda ingin melatih ulang model dengan data baru atau parameter yang berbeda:
+- Mengambil data terbaru via yfinance
+- Melakukan preprocessing
+- Mendeteksi pola candlestick terbaru
+- Memilih model .pkl sesuai pola
+- Menampilkan hasil prediksi:
+    - Naik / Turun
+    - Pola candlestick terakhir
+    - Ringkasan data
 
-1.  Pastikan semua data mentah Anda ada di folder `data_emas/`.
-2.  Buka dan jalankan semua sel di dalam `main_workflow` (Jupyter Notebook).
-3.  Proses ini akan memakan waktu, tetapi setelah selesai, folder `saved_models/` Anda akan diperbarui dengan model-model `.pkl` yang baru.
-4.  Setelah itu, Anda bisa menjalankan aplikasi Flask seperti pada langkah di atas.
+# 💡 Teknologi yang Digunakan
 
-## 💡 Teknologi yang Digunakan
+Machine Learning:
+- Scikit-learn
+- Random Forest
+- Logistic Regression
+- Pola candlestick
+- Teknik balancing data (SMOTE, optional)
 
-* **Analisis & Model:** Pandas, NumPy, Scikit-learn, Imbalanced-learn (SMOTENC)
-* **Aplikasi Web/API:** Flask
-* **Visualisasi:** Matplotlib, Seaborn
+Backend & API
+- Flask
+- joblib
+- yfinance
+
+Frontend
+- HTML (templates/index.html)
+- CSS sederhana
+
+# 📌 Catatan Tambahan
+
+- Sistem membaca pola candlestick terakhir untuk menentukan model mana yang digunakan.
+- Jika model untuk pola tersebut tidak ditemukan, API akan memakai model default.
+- Data real-time dari Yahoo Finance memastikan prediksi selalu menggunakan data terbaru.

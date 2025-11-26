@@ -1,53 +1,29 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Gold Price Prediction</title>
+    <title>Gold Stock Price Prediction</title>
     <style>
-        body {
-            font-family: Arial;
-            margin: 40px;
-        }
-
-        .container {
-            max-width: 500px;
-        }
-
-        label {
-            font-weight: bold;
-        }
-
+        body { font-family: Arial; margin: 40px; }
+        .container { max-width: 500px; }
+        label { font-weight: bold; }
         #result {
-            margin-top: 25px;
-            padding: 15px;
-            border: 1px solid #ccc;
-            background: #fafafa;
+            margin-top: 25px; padding: 15px;
+            border: 1px solid #ccc; background: #fafafa;
             border-radius: 6px;
         }
-
-        .flex-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 15px;
-        }
-
         button {
-            padding: 10px 18px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
+            padding: 10px 18px; background: #007bff;
+            color: white; border: none; border-radius: 5px;
             cursor: pointer;
         }
+        button:hover { background: #005fcc; }
 
-        button:hover {
-            background: #005fcc;
-        }
-
-        #info {
-            color: #555;
+        /* LOADING TEXT */
+        #loading {
+            margin-top: 20px;
             font-size: 14px;
-            margin-top: 5px;
+            color: #555;
+            display: none;
         }
     </style>
 </head>
@@ -55,18 +31,14 @@
 
 <div class="container">
 
-    <h2>Prediksi Harga Emas</h2>
+    <h2>Prediksi Harga Saham Emas</h2>
 
-    <label for="csvFile">Upload File CSV:</label><br>
-    <input type="file" id="csvFile" accept=".csv">
+    <label>Kode Saham (contoh: ANTM, BRMS, MEDC, dll):</label><br>
+    <input type="text" id="ticker" placeholder="ANTM" style="width: 100%; padding: 6px;"><br><br>
 
-    <div id="info">Upload file CSV berisi data mentah OHCLV (minimal 20 baris).</div>
+    <button onclick="predict()">Ambil Data & Prediksi</button>
 
-    <div class="flex-row">
-        <div></div> 
-        <!-- kosong di kiri agar tombol ke kanan -->
-        <button onclick="predict()">Prediksi</button>
-    </div>
+    <div id="loading">⏳ Mengambil data dari Yahoo Finance, tunggu sebentar...</div>
 
     <div id="result"></div>
 
@@ -74,21 +46,28 @@
 
 <script>
 function predict() {
-    const fileInput = document.getElementById("csvFile");
-    if (!fileInput.files.length) {
-        alert("Pilih file CSV terlebih dahulu");
+    const ticker = document.getElementById("ticker").value.trim();
+    if (!ticker) {
+        alert("Masukkan kode saham!");
         return;
     }
 
-    const formData = new FormData();
-    formData.append("file", fileInput.files[0]);
+    const payload = { ticker: ticker };
 
-    fetch("/predict_csv", {
+    // --- SHOW LOADING ---
+    document.getElementById("loading").style.display = "block";
+    document.getElementById("result").innerHTML = "";
+
+    fetch("/predict_ticker", {
         method: "POST",
-        body: formData
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
     })
     .then(async response => {
         const data = await response.json();
+
+        // --- HIDE LOADING ---
+        document.getElementById("loading").style.display = "none";
 
         if (!response.ok) {
             document.getElementById("result").innerHTML =
@@ -97,11 +76,12 @@ function predict() {
         }
 
         document.getElementById("result").innerHTML =
-            `<b>Pattern:</b> ${data.CandlePattern}<br>
+            `<b>Candle Pattern:</b> ${data.CandlePattern}<br>
              <b>Interpretation:</b> ${data.interpretation}<br>
              <b>Prediction:</b> ${data.prediction}`;
     })
-    .catch(err => {
+    .catch(() => {
+        document.getElementById("loading").style.display = "none";
         document.getElementById("result").innerHTML =
             "<b>Error:</b> Gagal menghubungi server.";
     });
